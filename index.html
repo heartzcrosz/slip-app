@@ -127,6 +127,28 @@ button:active{transform:scale(.95)}
   <div class="card limrow">🎯 ใช้ไม่เกินวันละ <input id="lim" type="number" min="0" step="1" inputmode="decimal" placeholder="ไม่จำกัด"> บาท
     <small>ถึง 90% ของงบ = สีส้ม · เกินงบ = สีแดง</small></div>
 
+  <details class="card imp" id="slipbox" open>
+    <summary>📷 อ่านสลีป → ตัวหนังสือ</summary>
+    <div style="margin-top:10px">
+      <small>เลือกรูปสลีป (ได้หลายรูป) ระบบจะอ่านแล้วเขียนเป็นบรรทัด: วันที่ เวลา | จำนวนเงิน | ผู้รับ | บันทึก</small>
+      <div class="foot" style="margin-bottom:8px">
+        <button class="p" id="slipbtn">📷 เลือกรูปสลีป</button>
+        <input type="file" id="slipfile" accept="image/*" multiple hidden>
+      </div>
+      <div class="st" id="slipst"></div>
+      <textarea id="sliptx" rows="4" placeholder="ผลการอ่านสลีปจะแสดงที่นี่ (แก้ไขได้)"></textarea>
+      <div class="foot">
+        <button id="slipcopy">📋 คัดลอก</button>
+        <button id="slipadd">➕ เพิ่มเข้าแอป</button>
+      </div>
+      <details style="margin-top:10px">
+        <summary style="cursor:pointer;font-size:13px;color:var(--mut)">🔑 ตั้งค่า Anthropic API key</summary>
+        <small style="margin-top:6px">ใช้ Claude อ่านรูปสลีป (มีค่าใช้จ่ายตามการใช้ API) · key เก็บไว้ในเครื่องนี้เท่านั้น และส่งไปที่ api.anthropic.com โดยตรง</small>
+        <div class="foot"><input id="slipkey" type="password" autocomplete="off" placeholder="sk-ant-..." style="flex:1"><button id="slipkeysave">บันทึก</button></div>
+      </details>
+    </div>
+  </details>
+
   <details class="card imp" id="impbox">
     <summary>📥 นำเข้า / สำรองข้อมูล</summary>
     <div style="margin-top:10px">
@@ -331,8 +353,9 @@ function addMany(list){
 }
 const mk=(date,time,amount,payee,note,cat)=>({id:uid(),date,time:time?time.padStart(5,'0'):'',amount,payee:(payee||'').trim(),note:(note||'').trim(),cat:CATS.includes((cat||'').trim())?cat.trim():'',check:false});
 
-$('impgo').onclick=()=>{
-  const lines=$('imptx').value.split('\n').map(x=>x.trim()).filter(Boolean);
+// แปลงข้อความ "วันที่ เวลา | จำนวนเงิน | ผู้รับ | รายการ | หมวดหมู่" เป็นรายการ แล้วเพิ่มเข้าแอป
+function importLines(text){
+  const lines=String(text||'').split('\n').map(x=>x.trim()).filter(Boolean);
   const out=[];let bad=0;
   for(const ln of lines){
     const p=ln.split(/\s*[|\t]\s*/);
@@ -341,10 +364,15 @@ $('impgo').onclick=()=>{
     if(!m||!(amount>0)){bad++;continue}
     out.push(mk(m[1],m[2],amount,p[2],p[3],p[4]));
   }
-  if(!lines.length) return impSay(false,'ยังไม่ได้วางข้อความ');
-  const r=addMany(out);
-  impSay(!bad,`✓ นำเข้า ${r.n} รายการ`+(r.dup?` · ซ้ำ ${r.dup}`:'')+(bad?` · ข้าม ${bad} บรรทัดที่รูปแบบไม่ถูก`:''));
-  if(r.n&&!bad)$('imptx').value='';
+  const r=lines.length?addMany(out):{n:0,dup:0};
+  return {lines:lines.length,n:r.n,dup:r.dup,bad};
+}
+window.importLines=importLines;
+$('impgo').onclick=()=>{
+  const r=importLines($('imptx').value);
+  if(!r.lines) return impSay(false,'ยังไม่ได้วางข้อความ');
+  impSay(!r.bad,`✓ นำเข้า ${r.n} รายการ`+(r.dup?` · ซ้ำ ${r.dup}`:'')+(r.bad?` · ข้าม ${r.bad} บรรทัดที่รูปแบบไม่ถูก`:''));
+  if(r.n&&!r.bad)$('imptx').value='';
 };
 
 function parseCSV(t){
@@ -411,5 +439,6 @@ sync(navigator.onLine?'บันทึกในเครื่องนี้':'
 if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
 if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{});
 </script>
+<script type="module" src="slip-reader.js"></script>
 </body>
 </html>
