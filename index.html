@@ -133,6 +133,10 @@ button:active{transform:scale(.95)}
       <small>เลือกรูปสลีป (ได้หลายรูป) ระบบจะอ่านแล้วเขียนเป็นบรรทัด: วันที่ เวลา | จำนวนเงิน | ผู้รับ | บันทึก</small>
       <div class="foot" style="margin-bottom:8px">
         <button class="p" id="slipbtn">📷 เลือกรูปสลีป</button>
+        <select id="slipmode" title="วิธีอ่านสลีป" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 8px">
+          <option value="ocr">อ่านฟรีในเครื่อง</option>
+          <option value="claude">อ่านด้วย Claude (ต้องมี key)</option>
+        </select>
         <input type="file" id="slipfile" accept="image/*" multiple hidden>
       </div>
       <div class="st" id="slipst"></div>
@@ -143,7 +147,7 @@ button:active{transform:scale(.95)}
       </div>
       <details style="margin-top:10px">
         <summary style="cursor:pointer;font-size:13px;color:var(--mut)">🔑 ตั้งค่า Anthropic API key</summary>
-        <small style="margin-top:6px">ใช้ Claude อ่านรูปสลีป (มีค่าใช้จ่ายตามการใช้ API) · key เก็บไว้ในเครื่องนี้เท่านั้น และส่งไปที่ api.anthropic.com โดยตรง</small>
+        <small style="margin-top:6px">ไม่ใส่ก็ได้: แบบ "อ่านฟรีในเครื่อง" ไม่ต้องใช้ key แต่อาจอ่านชื่อภาษาไทยผิดบ้าง · ถ้าใส่ key จะใช้ Claude อ่าน แม่นกว่า แต่มีค่าใช้จ่ายตามการใช้ API · key เก็บไว้ในเครื่องนี้เท่านั้น และส่งไปที่ api.anthropic.com โดยตรง</small>
         <div class="foot"><input id="slipkey" type="password" autocomplete="off" placeholder="sk-ant-..." style="flex:1"><button id="slipkeysave">บันทึก</button></div>
       </details>
     </div>
