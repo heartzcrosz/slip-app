@@ -1,8 +1,9 @@
-// อ่านรูปสลีปด้วย Claude แล้วแปลงเป็นบรรทัดข้อความ
+// อ่านรูปสลีปแล้วแปลงเป็นบรรทัดข้อความ: ฟรีด้วย OCR ในเครื่อง หรือด้วย Claude เมื่อมี API key
 // รูปแบบ: YYYY-MM-DD HH:MM | จำนวนเงิน | ผู้รับ | บันทึก
 import Anthropic from './vendor/anthropic-sdk.mjs';
+import { ocrSlip } from './slip-ocr.js';
 
-const AKEY = 'slipbudget:apikey';
+const AKEY = 'slipbudget:apikey', MKEY = 'slipbudget:readmode';
 const MODEL = 'claude-opus-5-5';
 const $ = id => document.getElementById(id);
 
@@ -28,8 +29,9 @@ const PROMPT = `อ่านสลีปโอนเงิน/ชำระเง
 - note: ถ้าสลีปมีบันทึกช่วยจำ (memo) ให้ใส่ข้อความนั้น ถ้าเป็นการจ่ายผ่านโครงการรัฐ เช่น ไทยช่วยไทย หรือ คนละครึ่ง ให้ใส่ชื่อโครงการ ถ้าไม่มีให้เป็นข้อความว่าง
 - ถ้ารูปไม่ใช่สลีป ให้ is_slip เป็น false และช่องอื่นเป็นข้อความว่าง`;
 
-let apiKey = '';
-try { apiKey = localStorage.getItem(AKEY) || ''; } catch (e) {}
+let apiKey = '', mode = '';
+try { apiKey = localStorage.getItem(AKEY) || ''; mode = localStorage.getItem(MKEY) || ''; } catch (e) {}
+if (mode !== 'ocr' && mode !== 'claude') mode = apiKey ? 'claude' : 'ocr';
 
 const say = (ok, t) => { const s = $('slipst'); s.className = 'st ' + (ok ? 'ok' : 'er'); s.textContent = t; };
 
@@ -85,26 +87,41 @@ function errText(e) {
   return e && e.message ? e.message : String(e);
 }
 
+// OCR ไม่ได้ตรวจว่าเป็นสลีปจริงหรือไม่ จึงคืนบรรทัดแม้อ่านได้ไม่ครบ ให้ผู้ใช้แก้เอง
+async function readSlipOcr(file) {
+  const d = await ocrSlip(file, t => say(true, t));
+  const miss = [!d.date && 'วันที่', !d.time && 'เวลา', !(parseFloat(d.amount) > 0) && 'จำนวนเงิน', !d.payee && 'ผู้รับ'].filter(Boolean);
+  if (!d.date && !(parseFloat(d.amount) > 0)) throw new Error('ไม่พบวันที่และจำนวนเงิน อาจไม่ใช่สลีป');
+  return { d, warn: miss.length ? 'อ่าน ' + miss.join(', ') + ' ไม่ได้ แก้ในกล่องข้อความ' : '' };
+}
+
 async function readFiles(files) {
-  if (!apiKey) {
+  if (mode === 'claude' && !apiKey) {
     $('slipkey').closest('details').open = true;
     $('slipkey').focus();
-    return say(false, 'ใส่ Anthropic API key ก่อน แล้วกดบันทึก');
+    return say(false, 'ใส่ Anthropic API key ก่อน แล้วกดบันทึก หรือเปลี่ยนเป็น "อ่านฟรีในเครื่อง"');
   }
-  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-  const out = new Array(files.length), errs = [];
+  const client = mode === 'claude' ? new Anthropic({ apiKey, dangerouslyAllowBrowser: true }) : null;
+  const out = new Array(files.length), errs = [], warns = [];
   let done = 0, next = 0;
   say(true, `กำลังอ่าน 0/${files.length} …`);
-  // อ่านพร้อมกันครั้งละ 3 รูป และเรียงผลตามลำดับรูปที่เลือก
+  // Claude: อ่านพร้อมกันครั้งละ 3 รูป · OCR: ทีละรูป (ใช้เครื่องคำนวณเอง) · เรียงผลตามลำดับรูปที่เลือก
   const worker = async () => {
     while (next < files.length) {
       const i = next++;
-      try { out[i] = slipLine(await readSlip(client, files[i])); }
+      try {
+        if (client) out[i] = slipLine(await readSlip(client, files[i]));
+        else {
+          const r = await readSlipOcr(files[i]);
+          out[i] = slipLine(r.d);
+          if (r.warn) warns.push(`${files[i].name}: ${r.warn}`);
+        }
+      }
       catch (e) { errs.push(`${files[i].name}: ${errText(e)}`); }
       say(true, `กำลังอ่าน ${++done}/${files.length} …`);
     }
   };
-  await Promise.all(Array.from({ length: Math.min(3, files.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(client ? 3 : 1, files.length) }, worker));
   const lines = out.filter(Boolean);
   if (lines.length) {
     const tx = $('sliptx');
@@ -113,16 +130,21 @@ async function readFiles(files) {
   const s = $('slipst'); s.className = 'st'; s.innerHTML = '';
   const line = (cls, t) => { const d = document.createElement('div'); d.className = cls; d.textContent = t; s.appendChild(d); };
   line(lines.length ? 'ok' : 'er', `✓ อ่านได้ ${lines.length}/${files.length} สลีป`);
+  warns.forEach(t => line('er', '⚠ ' + t));
   errs.forEach(t => line('er', '✕ ' + t));
+  if (!client && lines.length) line('', 'อ่านแบบฟรีอาจสะกดชื่อผิดบ้าง ตรวจก่อนกด "เพิ่มเข้าแอป"');
 }
 
 $('slipbtn').onclick = () => $('slipfile').click();
 $('slipfile').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) readFiles(fs); };
 $('slipkey').value = apiKey;
+$('slipmode').value = mode;
+$('slipmode').onchange = e => { mode = e.target.value; try { localStorage.setItem(MKEY, mode); } catch (er) {} };
 $('slipkeysave').onclick = () => {
   apiKey = $('slipkey').value.trim();
   try { apiKey ? localStorage.setItem(AKEY, apiKey) : localStorage.removeItem(AKEY); } catch (e) {}
   say(true, apiKey ? 'บันทึก API key แล้ว' : 'ลบ API key แล้ว');
+  if (apiKey && mode !== 'claude') { mode = 'claude'; $('slipmode').value = mode; try { localStorage.setItem(MKEY, mode); } catch (e) {} }
   if (apiKey) $('slipkey').closest('details').open = false;
 };
 $('slipcopy').onclick = async () => {
