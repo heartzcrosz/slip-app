@@ -117,22 +117,30 @@ const clean = s => s.replace(/^[\s:：\-–>|]+/, '').replace(/\s{2,}/g, ' ').tr
 const MASKED = /[xX*%]{3}|\*{2,}/;
 const BANK = /^(kbank|ktb|scb|bbl|bay|ttb|gsb|baac|uob|cimb|kkp|lhb|krungthai|krungsri|bangkok bank|ธ\.|ธนาคาร)\b/i;
 const CATEGORY = /อาหาร|เครื่องดื่ม|เครื่องคื่ม|ของหวาน|ของใช้|บริการ|ค่าสินค้า|จำนวน|amount|transaction|รหัส/i;
+const SUFFIX = /^(company|limited|co\.?|ltd\.?|corporation|จำกัด)/i;
 const isThai = s => /[\u0E00-\u0E7F]/.test(s);
 
 // เก็บเฉพาะส่วนที่เป็นชื่อในบรรทัด ตัดเศษที่ OCR อ่านจากรูปพื้นหลังทิ้ง
 function nameIn(line) {
   const toks = line.split(/\s+/).filter(Boolean);
-  const ascii = t => /^(MRS?|MS|MISS|DR)\.?$|^[A-Z][A-Z.,'&()\-]{1,}[A-Z.)]?$|^[A-Z]{2,}[.,]?$/.test(t);
+  const caps = t => /^(MRS?|MS|MISS|DR)\.?$|^[A-Z][A-Z.,'&()\-]{1,}[A-Z.)]?$|^[A-Z]{2,}[.,]?$/.test(t);
+  // ชื่อตัวพิมพ์เล็ก/ผสม เช่น kanda, TrueMoney (ต้องยาวอย่างน้อย 5 ตัว กันเศษ เช่น Teme จากรูปพื้นหลัง)
+  const word = t => /^[A-Za-z][a-z]{4,}$/.test(t) || /^[A-Z][a-z]+[A-Z][A-Za-z]+$/.test(t);
   const thai = t => /^[\u0E00-\u0E7F.()]+$/.test(t) && /[\u0E01-\u0E2E]/.test(t);
-  // เริ่มที่คำแรกที่ดูเป็นชื่อ แล้วเก็บต่อไปจนเจอคำที่ไม่ใช่ชื่อ
-  let i = toks.findIndex(t => (ascii(t) && t.replace(/\W/g, '').length >= 2) || (thai(t) && t.length >= 2));
-  if (i < 0) return '';
-  const kind = ascii(toks[i]) ? ascii : thai, out = [];
-  for (; i < toks.length && kind(toks[i]); i++) out.push(toks[i]);
-  const name = out.join(' ');
-  // ชื่อภาษาอังกฤษต้องมีคำยาวอย่างน้อย 4 ตัวอักษร กันเศษตัวอักษรจากรูปพื้นหลัง
-  if (kind === ascii) return out.some(t => t.replace(/[^A-Za-z]/g, '').length >= 4) ? name : '';
-  return name.replace(/[^\u0E00-\u0E7F]/g, '').length >= 3 ? name : '';
+  const kindOf = t => (caps(t) && t.replace(/\W/g, '').length >= 2) ? caps : word(t) ? word : (thai(t) && t.length >= 2) ? thai : null;
+  // ลองทุกจุดเริ่มต้นในบรรทัด (เศษอักษรหน้าชื่อ เช่น "FY บอสส์" จะไม่บังชื่อจริง) แล้วเก็บต่อจนเจอคำที่ไม่ใช่ชื่อ
+  for (let i = 0; i < toks.length; i++) {
+    const kind = kindOf(toks[i]);
+    if (!kind) continue;
+    const out = [];
+    for (let k = i; k < toks.length && kind(toks[k]); k++) out.push(toks[k]);
+    const name = out.join(' ');
+    // ชื่อภาษาอังกฤษตัวพิมพ์ใหญ่ต้องมีคำยาวอย่างน้อย 4 ตัวอักษร กันเศษตัวอักษรจากรูปพื้นหลัง
+    if (kind === caps) { if (out.some(t => t.replace(/[^A-Za-z]/g, '').length >= 4)) return name; }
+    else if (kind === word) return name;
+    else if (name.replace(/[^\u0E00-\u0E7F]/g, '').length >= 3) return name;
+  }
+  return '';
 }
 
 function findPayee(lines) {
@@ -154,7 +162,11 @@ function findPayee(lines) {
       // เจอเลขบัญชี/เลขอ้างอิงของผู้รับ ประเภทร้าน หรือชื่อธนาคาร แปลว่าหมดส่วนชื่อแล้ว
       if (isNoise(s) || CATEGORY.test(s) || (parts.length && BANK.test(s))) break;
       const n = nameIn(s);
-      if (n) parts.push(n);   // บรรทัดเศษจากรูปพื้นหลังข้ามไป
+      if (!n) continue;   // บรรทัดเศษจากรูปพื้นหลังข้ามไป
+      // บรรทัดต่อของชื่อ: ต่อเมื่อขึ้นต้นด้วย COMPANY/LIMITED/จำกัด หรือบรรทัดก่อนหน้าสั้นและบรรทัดนี้มีคำยาว (ชื่อที่ขึ้นบรรทัดใหม่)
+      // ไม่งั้นเป็นบรรทัดที่สอง (เช่น ชื่อบริษัทของร้าน) หรือเศษจากรูปพื้นหลัง ข้ามไป
+      if (parts.length && !(SUFFIX.test(n) || (parts[parts.length - 1].split(/\s+/).length <= 2 && n.split(/\s+/).some(t => t.replace(/[^A-Za-z\u0E01-\u0E2E]/g, '').length >= 6)))) continue;
+      parts.push(n);
       if (parts.length >= 2) break;
     }
     if (parts.length) return parts.reduce((a, b) => a + (isThai(a.slice(-1)) && isThai(b[0]) ? '' : ' ') + b);
@@ -262,7 +274,7 @@ export async function ocrSlip(file, onStatus) {
   let amount = a.amount || b.amount || c.amount;
   // จุดทศนิยมเล็ก อ่านหายได้ง่าย ถ้ารอบอื่นอ่านได้ตัวเลขเดียวกันพร้อมจุด ใช้ค่านั้น
   if (!amount.includes('.')) amount = [a, b, c].map(x => x.amount).find(v => v.includes('.') && v.replace('.', '') === amount) || amount;
-  const payee = capsName(c.payee) ? c.payee : isThai(b.payee) ? b.payee : a.payee || b.payee || c.payee;
+  const payee = capsName(c.payee) ? c.payee : isThai(b.payee) ? b.payee : isThai(a.payee) ? a.payee : c.payee || b.payee || a.payee;
   return {
     date: dt.date || a.date || b.date || c.date,
     guessed: dt.date ? !!dt.guessed : !!(a.guessed || b.guessed || c.guessed),
