@@ -78,10 +78,14 @@ function findTime(text, from) {
   return '';
 }
 
+// สลีปภาษาอังกฤษที่ลงท้ายด้วย "Baht" (เช่น K+) พิมพ์ทศนิยม 2 ตำแหน่งเสมอ แต่จุดเล็ก OCR อ่านหายง่าย
+// ("87.00 Baht" → "8700") ถ้าไม่มีจุดและมีอย่างน้อย 3 หลัก ให้ใส่จุดกลับก่อน 2 หลักสุดท้าย
 const moneyIn = s => {
   const m = s.match(new RegExp(MONEY.source + '\\s*(บาท|baht|THB|฿)?', 'i'));
   if (!m || (!m[2] && !m[3])) return '';
-  return m[1].replace(/,/g, '') + (m[2] || '');
+  const n = m[1].replace(/,/g, '');
+  if (!m[2] && /baht/i.test(m[3] || '') && n.length >= 3) return n.slice(0, -2) + '.' + n.slice(-2);
+  return n + (m[2] || '');
 };
 
 function findAmount(lines) {
