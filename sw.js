@@ -1,5 +1,5 @@
 // ตัวช่วยให้แอปเปิดได้แบบออฟไลน์ — เปลี่ยนเลขเวอร์ชันเมื่ออัปเดตไฟล์
-const C = 'slip-app-v3';
+const C = 'slip-app-v4';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './slip-reader.js', './slip-ocr.js', './vendor/anthropic-sdk.mjs'];
 
 self.addEventListener('install', e => {

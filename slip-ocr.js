@@ -1,4 +1,4 @@
-// อ่านสลีปแบบฟรีในเครื่อง: Tesseract OCR (ไทย+อังกฤษ) แล้วแยกวันที่ เวลา จำนวนเงิน ผู้รับ บันทึก จากข้อความ
+// อ่านสลีปแบบฟรีในเครื่อง: Tesseract OCR (ไทย+อังกฤษ) แล้วแยกวันที่ เวลา จำนวนเงิน ผู้รับ และชื่อโครงการ (ถ้ามี) จากข้อความ
 // ไม่ต้องใช้ API key แต่แม่นน้อยกว่าการให้ Claude อ่าน โดยเฉพาะชื่อภาษาไทย
 
 const TESS_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js';
@@ -106,15 +106,8 @@ function findPayee(lines) {
   return names.length ? clean(names[names.length > 1 ? 1 : 0]) : '';
 }
 
-function findNote(lines, text) {
-  const label = /^(บันทึกช่วยจำ|บันทึก|หมายเหตุ|memo|note)(?=$|[\s:：])\s*[:：]?/i;
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(label);
-    if (!m) continue;
-    const rest = clean(lines[i].slice(m[0].length));
-    if (rest) return rest;
-    if (lines[i + 1] && !isNoise(lines[i + 1])) return clean(lines[i + 1]);
-  }
+// ไม่อ่านบันทึกช่วยจำที่ผู้โอนพิมพ์เอง (OCR อ่านผิดบ่อย) ใส่เฉพาะชื่อโครงการ เช่น ไทยช่วยไทย
+function findProgram(text) {
   const p = text.match(/โครงการ\s*([^\s\n]+)/);
   if (p) return p[1];
   if (/ไทยช่วยไทย/.test(text)) return 'ไทยช่วยไทย';
@@ -133,7 +126,7 @@ export function parseSlipText(raw) {
     time: d ? findTime(text.slice(0, d.at) + ' ' + text.slice(d.at), d.at) : findTime(text, 0),
     amount: findAmount(lines),
     payee: findPayee(lines),
-    note: findNote(lines, text),
+    note: findProgram(text),
   };
 }
 
