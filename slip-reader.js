@@ -92,7 +92,10 @@ async function readSlipOcr(file) {
   const d = await ocrSlip(file, t => say(true, t));
   const miss = [!d.date && 'วันที่', !d.time && 'เวลา', !(parseFloat(d.amount) > 0) && 'จำนวนเงิน', !d.payee && 'ผู้รับ'].filter(Boolean);
   if (!d.date && !(parseFloat(d.amount) > 0)) throw new Error('ไม่พบวันที่และจำนวนเงิน อาจไม่ใช่สลีป');
-  return { d, warn: miss.length ? 'อ่าน ' + miss.join(', ') + ' ไม่ได้ แก้ในกล่องข้อความ' : '' };
+  const warns = [];
+  if (miss.length) warns.push('อ่าน ' + miss.join(', ') + ' ไม่ได้ แก้ในกล่องข้อความ');
+  if (d.guessed) warns.push('อ่านชื่อเดือนไม่ออก เดาเป็น ' + d.date + ' ตรวจอีกที');
+  return { d, warn: warns.join(' · ') };
 }
 
 async function readFiles(files) {
