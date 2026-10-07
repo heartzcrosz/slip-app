@@ -67,7 +67,8 @@ html{height:100%;background:var(--bar)}
 html,body{overflow:hidden;overscroll-behavior:none}
 body{position:fixed;top:0;left:0;right:0;bottom:auto;height:100vh!important;height:100lvh!important}
 .bar{padding-top:calc(8px + env(safe-area-inset-top,0px));padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
-.stage{background:var(--bg)}
+.bar{position:relative;z-index:2}
+.stage{background:var(--bg);margin-top:-1px}
 iframe{background:var(--bg)}
 #sab-probe{position:fixed;left:0;bottom:0;width:0;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none}
 .brand i.lg{background:none;overflow:hidden;border-radius:8px}
@@ -115,6 +116,10 @@ iframe{background:var(--bg)}
     const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;
     document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);
   }
+  (function(){function fh(){try{if(!(navigator.standalone||matchMedia('(display-mode: standalone)').matches))return;
+ var a=screen.width,b=screen.height,p=innerHeight>=innerWidth,h=p?Math.max(a,b):Math.min(a,b);
+ h=Math.max(h,innerHeight);document.body.style.setProperty('height',h+'px','important')}catch(e){}}
+ if(document.body)fh();else addEventListener('DOMContentLoaded',fh);addEventListener('resize',fh);addEventListener('orientationchange',function(){setTimeout(fh,300)});addEventListener('pageshow',fh)})();
   window.setSab=k=>{try{let p=document.getElementById('sab-probe');if(!p){p=document.createElement('div');p.id='sab-probe';document.body.appendChild(p)}
     const v=p.getBoundingClientRect().height||0;const d=document.getElementById('f-'+k).contentDocument;d.documentElement.style.setProperty('--sab',(v+8)+'px')}catch(e){}};
   const downloads={save:saveFile};
