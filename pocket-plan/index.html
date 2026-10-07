@@ -9,7 +9,6 @@
 <meta name="apple-mobile-web-app-title" content="Pocket Plan">
 <meta name="application-name" content="Pocket Plan">
 <meta name="theme-color" content="#0a0e1a">
-<link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -119,7 +118,7 @@ iframe{background:var(--bg)}
   window.ppDbg=function(){try{var c=document.querySelector('#bk .bk-c');if(!c)return;var d=document.getElementById('pp-dbg');if(!d){d=document.createElement('div');d.id='pp-dbg';d.style.cssText='margin-top:12px;font:11px/1.4 ui-monospace,monospace;opacity:.55;word-break:break-all';c.appendChild(d)}
  var t=document.createElement('div');t.style.cssText='position:fixed;top:0;height:env(safe-area-inset-top,0px);width:0;visibility:hidden';document.body.appendChild(t);var sat=t.getBoundingClientRect().height;t.remove();
  var p=document.getElementById('sab-probe'),sab=p?p.getBoundingClientRect().height:-1,b=document.body.getBoundingClientRect(),st=document.querySelector('.stage').getBoundingClientRect(),vv=window.visualViewport;
- d.textContent='v11 sa='+(navigator.standalone?1:0)+' ih='+innerHeight+' ch='+document.documentElement.clientHeight+' vv='+(vv?Math.round(vv.height)+'/'+Math.round(vv.offsetTop):'-')+' scr='+screen.width+'x'+screen.height+' body='+Math.round(b.top)+'-'+Math.round(b.bottom)+' stage='+Math.round(st.top)+'-'+Math.round(st.bottom)+' sat='+sat+' sab='+sab+' sy='+scrollY}catch(e){}};
+ d.textContent='v12 sa='+(navigator.standalone?1:0)+' ih='+innerHeight+' ch='+document.documentElement.clientHeight+' vv='+(vv?Math.round(vv.height)+'/'+Math.round(vv.offsetTop):'-')+' scr='+screen.width+'x'+screen.height+' body='+Math.round(b.top)+'-'+Math.round(b.bottom)+' stage='+Math.round(st.top)+'-'+Math.round(st.bottom)+' sat='+sat+' sab='+sab+' sy='+scrollY}catch(e){}};
   window.setSab=k=>{try{let p=document.getElementById('sab-probe');if(!p){p=document.createElement('div');p.id='sab-probe';document.body.appendChild(p)}
     const v=p.getBoundingClientRect().height||0;const d=document.getElementById('f-'+k).contentDocument;d.documentElement.style.setProperty('--sab',(v+8)+'px')}catch(e){}};
   const downloads={save:saveFile};
