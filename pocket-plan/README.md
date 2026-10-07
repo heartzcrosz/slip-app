@@ -16,3 +16,5 @@
 - `index.html` แอปทั้งหมด (สลีปรายวัน + งบรายเดือน)
 - `manifest.webmanifest`, `sw.js` ทำให้ติดตั้งเป็นแอปและเปิดได้แม้ออฟไลน์
 - `icons/` ไอคอนแอป
+
+ลิงก์แอป: https://heartzcrosz.github.io/slip-app/pocket-plan/
