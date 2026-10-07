@@ -5,7 +5,7 @@
 <title>Pocket Plan</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Pocket Plan">
 <meta name="application-name" content="Pocket Plan">
 <meta name="theme-color" content="#0a0e1a">
@@ -116,22 +116,10 @@ iframe{background:var(--bg)}
     const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;
     document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);
   }
-  (function(){function fh(){try{if(!(navigator.standalone||matchMedia('(display-mode: standalone)').matches))return;
- var a=screen.width,b=screen.height,p=innerHeight>=innerWidth,h=p?Math.max(a,b):Math.min(a,b);
- h=Math.max(h,innerHeight);document.body.style.setProperty('bottom','auto','important');document.body.style.setProperty('height',h+'px','important')}catch(e){}}
- if(document.body)fh();else addEventListener('DOMContentLoaded',fh);addEventListener('resize',fh);addEventListener('orientationchange',function(){setTimeout(fh,300)});addEventListener('pageshow',fh)})();
   window.ppDbg=function(){try{var c=document.querySelector('#bk .bk-c');if(!c)return;var d=document.getElementById('pp-dbg');if(!d){d=document.createElement('div');d.id='pp-dbg';d.style.cssText='margin-top:12px;font:11px/1.4 ui-monospace,monospace;opacity:.55;word-break:break-all';c.appendChild(d)}
  var t=document.createElement('div');t.style.cssText='position:fixed;top:0;height:env(safe-area-inset-top,0px);width:0;visibility:hidden';document.body.appendChild(t);var sat=t.getBoundingClientRect().height;t.remove();
  var p=document.getElementById('sab-probe'),sab=p?p.getBoundingClientRect().height:-1,b=document.body.getBoundingClientRect(),st=document.querySelector('.stage').getBoundingClientRect(),vv=window.visualViewport;
- d.textContent='v10 sa='+(navigator.standalone?1:0)+' ih='+innerHeight+' ch='+document.documentElement.clientHeight+' vv='+(vv?Math.round(vv.height)+'/'+Math.round(vv.offsetTop):'-')+' scr='+screen.width+'x'+screen.height+' body='+Math.round(b.top)+'-'+Math.round(b.bottom)+' stage='+Math.round(st.top)+'-'+Math.round(st.bottom)+' sat='+sat+' sab='+sab+' sy='+scrollY}catch(e){}};
-  (function(){var last=0;function heal(){try{if(!(navigator.standalone||matchMedia('(display-mode: standalone)').matches))return;
- var want=Math.max(screen.width,screen.height);if(innerHeight<innerWidth)return;if(innerHeight>=want-4)return;
- var n=Date.now();if(n-last<1500)return;last=n;var e=document.body;e.style.display='none';void e.offsetHeight;e.style.display='';
- window.scrollTo(0,0)}catch(x){}}
- [300,900,2000].forEach(function(t){setTimeout(heal,t)});
- addEventListener('pageshow',function(){setTimeout(heal,150)});addEventListener('resize',function(){setTimeout(heal,200)});
- document.addEventListener('visibilitychange',function(){if(!document.hidden)setTimeout(heal,200)});
- document.addEventListener('focusout',function(){setTimeout(heal,300)})})();
+ d.textContent='v11 sa='+(navigator.standalone?1:0)+' ih='+innerHeight+' ch='+document.documentElement.clientHeight+' vv='+(vv?Math.round(vv.height)+'/'+Math.round(vv.offsetTop):'-')+' scr='+screen.width+'x'+screen.height+' body='+Math.round(b.top)+'-'+Math.round(b.bottom)+' stage='+Math.round(st.top)+'-'+Math.round(st.bottom)+' sat='+sat+' sab='+sab+' sy='+scrollY}catch(e){}};
   window.setSab=k=>{try{let p=document.getElementById('sab-probe');if(!p){p=document.createElement('div');p.id='sab-probe';document.body.appendChild(p)}
     const v=p.getBoundingClientRect().height||0;const d=document.getElementById('f-'+k).contentDocument;d.documentElement.style.setProperty('--sab',(v+8)+'px')}catch(e){}};
   const downloads={save:saveFile};
